@@ -4,7 +4,7 @@ plugins {
 
 android {
     namespace = "wlv.ac.uk.myblog"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "wlv.ac.uk.myblog"
