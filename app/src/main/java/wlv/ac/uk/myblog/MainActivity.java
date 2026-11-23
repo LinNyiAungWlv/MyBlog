@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -49,9 +48,12 @@ public class MainActivity extends AppCompatActivity {
         recyclerMessages = findViewById(R.id.recyclerMessages);
         textEmpty = findViewById(R.id.textEmpty);
 
-        // For now, tapping a message just shows its title. The detail screen comes next.
-        adapter = new MessageAdapter(message ->
-                Toast.makeText(this, message.getTitle(), Toast.LENGTH_SHORT).show());
+        // Tapping a message opens it in the detail screen
+        adapter = new MessageAdapter(message -> {
+            Intent intent = new Intent(this, MessageDetailActivity.class);
+            intent.putExtra(MessageDetailActivity.EXTRA_MESSAGE_ID, message.getId());
+            startActivity(intent);
+        });
         recyclerMessages.setAdapter(adapter);
 
         // + button opens the editor to write a new message
