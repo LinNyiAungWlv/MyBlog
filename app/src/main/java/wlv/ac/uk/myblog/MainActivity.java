@@ -1,5 +1,6 @@
 package wlv.ac.uk.myblog;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
@@ -52,6 +53,10 @@ public class MainActivity extends AppCompatActivity {
         adapter = new MessageAdapter(message ->
                 Toast.makeText(this, message.getTitle(), Toast.LENGTH_SHORT).show());
         recyclerMessages.setAdapter(adapter);
+
+        // + button opens the editor to write a new message
+        findViewById(R.id.fabAdd).setOnClickListener(v ->
+                startActivity(new Intent(this, EditMessageActivity.class)));
     }
 
     /**

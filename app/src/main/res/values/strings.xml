@@ -2,4 +2,14 @@
     <string name="app_name">MyBlog</string>
     <string name="empty_messages">No messages yet.\nTap + to write your first post.</string>
     <string name="add_message">Add message</string>
+
+    <!-- Editor screen -->
+    <string name="new_message">New message</string>
+    <string name="title">Title</string>
+    <string name="message">Message</string>
+    <string name="save">Save</string>
+    <string name="message_saved">Message saved</string>
+    <string name="save_failed">Could not save the message</string>
+    <string name="error_title_required">Please enter a title</string>
+    <string name="error_body_required">Please enter a message</string>
 </resources>
