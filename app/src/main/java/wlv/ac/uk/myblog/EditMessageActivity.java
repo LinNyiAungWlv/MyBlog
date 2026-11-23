@@ -17,12 +17,16 @@ import wlv.ac.uk.myblog.data.MessageRepository;
 import wlv.ac.uk.myblog.model.Message;
 
 /**
- * Screen for writing a new blog message.
+ * Screen for writing a new blog message or editing an existing one.
+ * If EXTRA_MESSAGE_ID is passed in the Intent, that message is loaded for editing.
  * Everything is saved to the local SQLite database, so it works offline.
  */
 public class EditMessageActivity extends AppCompatActivity {
 
+    public static final String EXTRA_MESSAGE_ID = "message_id";
+
     private MessageRepository repository;
+    private Message existingMessage;   // null when creating a new message
     private TextInputLayout layoutTitle;
     private TextInputLayout layoutBody;
     private TextInputEditText editTitle;
@@ -55,6 +59,24 @@ public class EditMessageActivity extends AppCompatActivity {
         editTitle = findViewById(R.id.editTitle);
         editBody = findViewById(R.id.editBody);
 
+        // Edit mode: load the existing message
+        long messageId = getIntent().getLongExtra(EXTRA_MESSAGE_ID, -1);
+        if (messageId != -1) {
+            existingMessage = repository.getById(messageId);
+            if (existingMessage == null) {
+                Toast.makeText(this, R.string.message_not_found, Toast.LENGTH_SHORT).show();
+                finish();
+                return;
+            }
+            toolbar.setTitle(R.string.edit_message);
+            // Only fill the fields the first time. After a screen rotation
+            // Android restores whatever the user had typed.
+            if (savedInstanceState == null) {
+                editTitle.setText(existingMessage.getTitle());
+                editBody.setText(existingMessage.getBody());
+            }
+        }
+
         findViewById(R.id.buttonSave).setOnClickListener(v -> saveMessage());
     }
 
@@ -74,14 +96,24 @@ public class EditMessageActivity extends AppCompatActivity {
             return;
         }
 
-        long id = repository.insert(new Message(title, body, null));
-        if (id == -1) {
+        boolean saved;
+        if (existingMessage == null) {
+            // Create mode: add a new row
+            saved = repository.insert(new Message(title, body, null)) != -1;
+        } else {
+            // Edit mode: change the existing row
+            existingMessage.setTitle(title);
+            existingMessage.setBody(body);
+            saved = repository.update(existingMessage);
+        }
+
+        if (!saved) {
             Toast.makeText(this, R.string.save_failed, Toast.LENGTH_SHORT).show();
             return;
         }
 
         Toast.makeText(this, R.string.message_saved, Toast.LENGTH_SHORT).show();
-        finish();   // go back to the list, which reloads in onResume()
+        finish();   // go back to the previous screen, which reloads in onResume()
     }
 
     /**

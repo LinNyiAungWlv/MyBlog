@@ -1,16 +1,21 @@
 package wlv.ac.uk.myblog;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.text.DateFormat;
 import java.util.Date;
@@ -79,6 +84,48 @@ public class MessageDetailActivity extends AppCompatActivity {
         String date = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
                 .format(new Date(message.getUpdatedAt()));
         textDate.setText(date);
+    }
+
+    /** Adds the Edit and Delete actions to the toolbar. */
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_message_detail, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        int itemId = item.getItemId();
+        if (itemId == R.id.action_edit) {
+            // Open the editor with this message loaded
+            Intent intent = new Intent(this, EditMessageActivity.class);
+            intent.putExtra(EditMessageActivity.EXTRA_MESSAGE_ID, messageId);
+            startActivity(intent);
+            return true;
+        } else if (itemId == R.id.action_delete) {
+            confirmDelete();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    /** Asks the user to confirm before deleting, because it cannot be undone. */
+    private void confirmDelete() {
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.delete_message_title)
+                .setMessage(R.string.delete_message_confirm)
+                .setNegativeButton(R.string.cancel, null)
+                .setPositiveButton(R.string.delete, (dialog, which) -> deleteMessage())
+                .show();
+    }
+
+    private void deleteMessage() {
+        if (repository.delete(messageId)) {
+            Toast.makeText(this, R.string.message_deleted, Toast.LENGTH_SHORT).show();
+            finish();   // back to the list, which reloads without this message
+        } else {
+            Toast.makeText(this, R.string.delete_failed, Toast.LENGTH_SHORT).show();
+        }
     }
 
     /** Back arrow in the toolbar returns to the list. */
