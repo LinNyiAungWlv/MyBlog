@@ -3,6 +3,8 @@
     <style name="Base.Theme.MyBlog" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <!-- Selection bar is drawn over the toolbar instead of pushing the list down -->
+        <item name="windowActionModeOverlay">true</item>
     </style>
 
     <style name="Theme.MyBlog" parent="Base.Theme.MyBlog" />

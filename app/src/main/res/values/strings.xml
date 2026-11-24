@@ -5,6 +5,10 @@
     <string name="search">Search</string>
     <string name="search_hint">Search messages</string>
     <string name="no_search_results">No messages match \"%1$s\"</string>
+    <string name="selected_count">%1$d selected</string>
+    <string name="delete_selected_title">Delete selected messages?</string>
+    <string name="delete_selected_confirm">%1$d selected will be permanently removed from your device.</string>
+    <string name="messages_deleted">%1$d deleted</string>
 
     <!-- Editor screen -->
     <string name="new_message">New message</string>
