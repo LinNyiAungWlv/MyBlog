@@ -1,5 +1,6 @@
 package wlv.ac.uk.myblog;
 
+import android.content.ActivityNotFoundException;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
@@ -30,7 +31,7 @@ import wlv.ac.uk.myblog.model.Message;
 /**
  * Screen for writing a new blog message or editing an existing one.
  * If EXTRA_MESSAGE_ID is passed in the Intent, that message is loaded for editing.
- * A photo can be attached from the gallery.
+ * A photo can be attached from the gallery or taken with the camera.
  * Everything is saved to the local SQLite database, so it works offline.
  */
 public class EditMessageActivity extends AppCompatActivity {
@@ -56,6 +57,17 @@ public class EditMessageActivity extends AppCompatActivity {
             registerForActivityResult(new ActivityResultContracts.PickVisualMedia(), uri -> {
                 if (uri != null) {   // null means the user cancelled
                     attachImage(uri);
+                }
+            });
+
+    /**
+     * Opens the camera app, which saves the photo into our temporary camera file.
+     * No CAMERA permission is needed because the camera app takes the photo, not us.
+     */
+    private final ActivityResultLauncher<Uri> takePhoto =
+            registerForActivityResult(new ActivityResultContracts.TakePicture(), success -> {
+                if (success) {   // false means the user cancelled
+                    attachImage(ImageStorage.getCameraPhotoUri(this));
                 }
             });
 
@@ -117,6 +129,7 @@ public class EditMessageActivity extends AppCompatActivity {
                 pickImage.launch(new PickVisualMediaRequest.Builder()
                         .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE)
                         .build()));
+        findViewById(R.id.buttonCamera).setOnClickListener(v -> openCamera());
         buttonRemoveImage.setOnClickListener(v -> replaceImage(null));
         findViewById(R.id.buttonSave).setOnClickListener(v -> saveMessage());
     }
@@ -147,6 +160,15 @@ public class EditMessageActivity extends AppCompatActivity {
     }
 
     // ----- image handling -----
+
+    private void openCamera() {
+        try {
+            takePhoto.launch(ImageStorage.getCameraPhotoUri(this));
+        } catch (ActivityNotFoundException e) {
+            // Device has no camera app
+            Toast.makeText(this, R.string.no_camera, Toast.LENGTH_SHORT).show();
+        }
+    }
 
     /** Copies the chosen image into app storage and shows it. */
     private void attachImage(Uri uri) {

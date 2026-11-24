@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Folders that the FileProvider is allowed to share with other apps
+    (for example, the camera app saving a photo into our cache).
+-->
+<paths>
+    <!-- Temporary photo taken by the camera app, before it is copied into images/ -->
+    <cache-path
+        name="camera"
+        path="camera/" />
+</paths>

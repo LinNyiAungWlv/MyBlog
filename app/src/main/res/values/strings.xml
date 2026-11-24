@@ -21,6 +21,8 @@
     <string name="error_body_required">Please enter a message</string>
     <string name="gallery">Gallery</string>
     <string name="remove_image">Remove image</string>
+    <string name="camera">Camera</string>
+    <string name="no_camera">No camera app is available on this device</string>
     <string name="attached_image">Attached image</string>
     <string name="image_failed">Could not attach the image</string>
 

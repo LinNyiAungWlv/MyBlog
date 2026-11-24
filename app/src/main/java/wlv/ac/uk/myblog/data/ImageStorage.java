@@ -7,6 +7,8 @@ import android.graphics.Matrix;
 import android.media.ExifInterface;
 import android.net.Uri;
 
+import androidx.core.content.FileProvider;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -66,6 +68,20 @@ public class ImageStorage {
             bitmap.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, out);
         }
         return file.getAbsolutePath();
+    }
+
+    /**
+     * Returns a content:// address for a temporary file the camera app can write its photo into.
+     * The same file is reused each time; saveImage() copies it into images/ afterwards.
+     */
+    public static Uri getCameraPhotoUri(Context context) {
+        File folder = new File(context.getCacheDir(), "camera");
+        if (!folder.exists()) {
+            //noinspection ResultOfMethodCallIgnored
+            folder.mkdirs();
+        }
+        File file = new File(folder, "camera_photo.jpg");
+        return FileProvider.getUriForFile(context, context.getPackageName() + ".fileprovider", file);
     }
 
     /** Loads a saved image for display, or returns null if the file is missing. */
