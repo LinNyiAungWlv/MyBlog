@@ -49,20 +49,36 @@ public class MessageRepository {
         return rows > 0;
     }
 
-    /** Deletes one message by id. Returns true if it was deleted. */
+    /**
+     * Deletes one message by id, and its image file if it has one.
+     * Returns true if it was deleted.
+     */
     public boolean delete(long id) {
+        Message message = getById(id);   // read first so we know which image to delete
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         int rows = db.delete(DbHelper.TABLE_MESSAGES,
                 DbHelper.COL_ID + " = ?", new String[]{String.valueOf(id)});
+        if (rows > 0 && message != null) {
+            ImageStorage.deleteImage(message.getImagePath());
+        }
         return rows > 0;
     }
 
     /**
      * Deletes a group of selected messages in one transaction,
      * so either all of them are deleted or none are.
-     * Returns how many were deleted.
+     * Their image files are deleted afterwards. Returns how many were deleted.
      */
     public int deleteMany(List<Long> ids) {
+        // Remember the image files before the rows are gone
+        List<String> imagePaths = new ArrayList<>();
+        for (long id : ids) {
+            Message message = getById(id);
+            if (message != null && message.hasImage()) {
+                imagePaths.add(message.getImagePath());
+            }
+        }
+
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         int deleted = 0;
         db.beginTransaction();
@@ -74,6 +90,13 @@ public class MessageRepository {
             db.setTransactionSuccessful();
         } finally {
             db.endTransaction();
+        }
+
+        // Only remove the files once the database delete has succeeded
+        if (deleted > 0) {
+            for (String path : imagePaths) {
+                ImageStorage.deleteImage(path);
+            }
         }
         return deleted;
     }

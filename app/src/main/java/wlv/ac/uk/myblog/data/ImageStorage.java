@@ -92,6 +92,30 @@ public class ImageStorage {
         return BitmapFactory.decodeFile(path);
     }
 
+    /**
+     * Loads a small version of a saved image for the list, so scrolling stays smooth.
+     * Returns null if there is no image or the file is missing.
+     */
+    public static Bitmap loadThumbnail(String path, int sizePx) {
+        if (path == null) {
+            return null;
+        }
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(path, options);
+        if (options.outWidth <= 0) {
+            return null;   // file missing or not an image
+        }
+        // Halve the size until it is just above the size we need
+        int sampleSize = 1;
+        while (Math.min(options.outWidth, options.outHeight) / (sampleSize * 2) >= sizePx) {
+            sampleSize *= 2;
+        }
+        options.inSampleSize = sampleSize;
+        options.inJustDecodeBounds = false;
+        return BitmapFactory.decodeFile(path, options);
+    }
+
     /** Deletes a saved image file. Does nothing if the path is null. */
     public static void deleteImage(String path) {
         if (path != null) {

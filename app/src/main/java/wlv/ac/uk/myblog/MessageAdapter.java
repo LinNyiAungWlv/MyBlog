@@ -1,8 +1,10 @@
 package wlv.ac.uk.myblog;
 
+import android.graphics.Bitmap;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -17,6 +19,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import wlv.ac.uk.myblog.data.ImageStorage;
 import wlv.ac.uk.myblog.model.Message;
 
 /**
@@ -89,6 +92,12 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
         holder.textBody.setText(message.getBody());
         holder.textDate.setText(dateFormat.format(new Date(message.getUpdatedAt())));
 
+        // Thumbnail of the attached image, hidden when there is none
+        int sizePx = holder.imageThumbnail.getLayoutParams().width;
+        Bitmap thumbnail = ImageStorage.loadThumbnail(message.getImagePath(), sizePx);
+        holder.imageThumbnail.setImageBitmap(thumbnail);
+        holder.imageThumbnail.setVisibility(thumbnail != null ? View.VISIBLE : View.GONE);
+
         // Selected cards show a tick and a coloured outline
         holder.card.setChecked(selectedIds.contains(message.getId()));
 
@@ -107,6 +116,7 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
     /** Holds the views for one row so they don't have to be looked up every time. */
     static class MessageViewHolder extends RecyclerView.ViewHolder {
         final MaterialCardView card;
+        final ImageView imageThumbnail;
         final TextView textTitle;
         final TextView textBody;
         final TextView textDate;
@@ -114,6 +124,7 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
         MessageViewHolder(@NonNull View itemView) {
             super(itemView);
             card = (MaterialCardView) itemView;
+            imageThumbnail = itemView.findViewById(R.id.imageThumbnail);
             textTitle = itemView.findViewById(R.id.textTitle);
             textBody = itemView.findViewById(R.id.textBody);
             textDate = itemView.findViewById(R.id.textDate);
