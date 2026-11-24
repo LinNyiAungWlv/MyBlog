@@ -2,6 +2,9 @@
     <string name="app_name">MyBlog</string>
     <string name="empty_messages">No messages yet.\nTap + to write your first post.</string>
     <string name="add_message">Add message</string>
+    <string name="search">Search</string>
+    <string name="search_hint">Search messages</string>
+    <string name="no_search_results">No messages match \"%1$s\"</string>
 
     <!-- Editor screen -->
     <string name="new_message">New message</string>

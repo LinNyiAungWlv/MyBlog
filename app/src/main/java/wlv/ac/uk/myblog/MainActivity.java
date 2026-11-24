@@ -2,11 +2,14 @@ package wlv.ac.uk.myblog;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SearchView;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -20,7 +23,8 @@ import wlv.ac.uk.myblog.data.MessageRepository;
 import wlv.ac.uk.myblog.model.Message;
 
 /**
- * Main screen. Shows the list of saved messages, newest first.
+ * Main screen. Shows the list of saved messages, newest first,
+ * and lets the user search them by title or text.
  */
 public class MainActivity extends AppCompatActivity {
 
@@ -28,6 +32,7 @@ public class MainActivity extends AppCompatActivity {
     private MessageAdapter adapter;
     private RecyclerView recyclerMessages;
     private TextView textEmpty;
+    private String searchQuery = "";   // empty means "show all messages"
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,12 +76,50 @@ public class MainActivity extends AppCompatActivity {
         loadMessages();
     }
 
+    /** Adds the search icon to the toolbar and listens for typed text. */
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+
+        MenuItem searchItem = menu.findItem(R.id.action_search);
+        SearchView searchView = (SearchView) searchItem.getActionView();
+        searchView.setQueryHint(getString(R.string.search_hint));
+
+        // Filter the list on every key press
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                searchView.clearFocus();   // hide the keyboard
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                searchQuery = newText.trim();
+                loadMessages();
+                return true;
+            }
+        });
+        return true;
+    }
+
+    /**
+     * Loads all messages, or only the matching ones if the user is searching,
+     * and shows a message instead of the list when there is nothing to show.
+     */
     private void loadMessages() {
-        List<Message> messages = repository.getAll();
+        boolean searching = !searchQuery.isEmpty();
+        List<Message> messages = searching
+                ? repository.search(searchQuery)
+                : repository.getAll();
         adapter.setMessages(messages);
 
-        // Show the "No messages yet" text when the list is empty
         boolean isEmpty = messages.isEmpty();
+        if (isEmpty) {
+            textEmpty.setText(searching
+                    ? getString(R.string.no_search_results, searchQuery)
+                    : getString(R.string.empty_messages));
+        }
         textEmpty.setVisibility(isEmpty ? View.VISIBLE : View.GONE);
         recyclerMessages.setVisibility(isEmpty ? View.GONE : View.VISIBLE);
     }
