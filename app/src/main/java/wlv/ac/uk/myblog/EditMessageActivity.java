@@ -1,9 +1,17 @@
 package wlv.ac.uk.myblog;
 
+import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.PickVisualMediaRequest;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -13,17 +21,22 @@ import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
+import java.io.IOException;
+
+import wlv.ac.uk.myblog.data.ImageStorage;
 import wlv.ac.uk.myblog.data.MessageRepository;
 import wlv.ac.uk.myblog.model.Message;
 
 /**
  * Screen for writing a new blog message or editing an existing one.
  * If EXTRA_MESSAGE_ID is passed in the Intent, that message is loaded for editing.
+ * A photo can be attached from the gallery.
  * Everything is saved to the local SQLite database, so it works offline.
  */
 public class EditMessageActivity extends AppCompatActivity {
 
     public static final String EXTRA_MESSAGE_ID = "message_id";
+    private static final String STATE_IMAGE_PATH = "image_path";
 
     private MessageRepository repository;
     private Message existingMessage;   // null when creating a new message
@@ -31,6 +44,20 @@ public class EditMessageActivity extends AppCompatActivity {
     private TextInputLayout layoutBody;
     private TextInputEditText editTitle;
     private TextInputEditText editBody;
+    private ImageView imagePreview;
+    private View buttonRemoveImage;
+
+    private String originalImagePath;  // image the message had when the screen opened
+    private String imagePath;          // image currently attached (may be new)
+    private boolean saved = false;
+
+    /** Opens the Android photo picker. No storage permission is needed for this. */
+    private final ActivityResultLauncher<PickVisualMediaRequest> pickImage =
+            registerForActivityResult(new ActivityResultContracts.PickVisualMedia(), uri -> {
+                if (uri != null) {   // null means the user cancelled
+                    attachImage(uri);
+                }
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,6 +85,8 @@ public class EditMessageActivity extends AppCompatActivity {
         layoutBody = findViewById(R.id.layoutBody);
         editTitle = findViewById(R.id.editTitle);
         editBody = findViewById(R.id.editBody);
+        imagePreview = findViewById(R.id.imagePreview);
+        buttonRemoveImage = findViewById(R.id.buttonRemoveImage);
 
         // Edit mode: load the existing message
         long messageId = getIntent().getLongExtra(EXTRA_MESSAGE_ID, -1);
@@ -69,6 +98,7 @@ public class EditMessageActivity extends AppCompatActivity {
                 return;
             }
             toolbar.setTitle(R.string.edit_message);
+            originalImagePath = existingMessage.getImagePath();
             // Only fill the fields the first time. After a screen rotation
             // Android restores whatever the user had typed.
             if (savedInstanceState == null) {
@@ -77,7 +107,24 @@ public class EditMessageActivity extends AppCompatActivity {
             }
         }
 
+        // After a rotation, keep the image that was attached; otherwise start with the original
+        imagePath = savedInstanceState != null
+                ? savedInstanceState.getString(STATE_IMAGE_PATH)
+                : originalImagePath;
+        showImagePreview();
+
+        findViewById(R.id.buttonGallery).setOnClickListener(v ->
+                pickImage.launch(new PickVisualMediaRequest.Builder()
+                        .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE)
+                        .build()));
+        buttonRemoveImage.setOnClickListener(v -> replaceImage(null));
         findViewById(R.id.buttonSave).setOnClickListener(v -> saveMessage());
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString(STATE_IMAGE_PATH, imagePath);
     }
 
     /** Back arrow in the toolbar closes this screen without saving. */
@@ -86,6 +133,62 @@ public class EditMessageActivity extends AppCompatActivity {
         finish();
         return true;
     }
+
+    /**
+     * If the screen is closed without saving, delete any new image file
+     * that was copied in, so it doesn't waste space.
+     */
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (isFinishing() && !saved && isNewImage(imagePath)) {
+            ImageStorage.deleteImage(imagePath);
+        }
+    }
+
+    // ----- image handling -----
+
+    /** Copies the chosen image into app storage and shows it. */
+    private void attachImage(Uri uri) {
+        try {
+            replaceImage(ImageStorage.saveImage(this, uri));
+        } catch (IOException e) {
+            Toast.makeText(this, R.string.image_failed, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /**
+     * Swaps the attached image (null = no image).
+     * A new image picked earlier on this screen is deleted straight away;
+     * the original image is only deleted once the message is saved.
+     */
+    private void replaceImage(String newPath) {
+        if (isNewImage(imagePath)) {
+            ImageStorage.deleteImage(imagePath);
+        }
+        imagePath = newPath;
+        showImagePreview();
+    }
+
+    /** True if the path is an image added on this screen (not the message's original image). */
+    private boolean isNewImage(String path) {
+        return path != null && !path.equals(originalImagePath);
+    }
+
+    private void showImagePreview() {
+        Bitmap bitmap = ImageStorage.loadImage(imagePath);
+        if (bitmap != null) {
+            imagePreview.setImageBitmap(bitmap);
+            imagePreview.setVisibility(View.VISIBLE);
+            buttonRemoveImage.setVisibility(View.VISIBLE);
+        } else {
+            imagePreview.setImageDrawable(null);
+            imagePreview.setVisibility(View.GONE);
+            buttonRemoveImage.setVisibility(View.GONE);
+        }
+    }
+
+    // ----- saving -----
 
     /** Checks the input, saves the message to the database and closes the screen. */
     private void saveMessage() {
@@ -96,22 +199,29 @@ public class EditMessageActivity extends AppCompatActivity {
             return;
         }
 
-        boolean saved;
+        boolean ok;
         if (existingMessage == null) {
             // Create mode: add a new row
-            saved = repository.insert(new Message(title, body, null)) != -1;
+            ok = repository.insert(new Message(title, body, imagePath)) != -1;
         } else {
             // Edit mode: change the existing row
             existingMessage.setTitle(title);
             existingMessage.setBody(body);
-            saved = repository.update(existingMessage);
+            existingMessage.setImagePath(imagePath);
+            ok = repository.update(existingMessage);
         }
 
-        if (!saved) {
+        if (!ok) {
             Toast.makeText(this, R.string.save_failed, Toast.LENGTH_SHORT).show();
             return;
         }
 
+        // The old image was replaced or removed, so its file is no longer needed
+        if (originalImagePath != null && !originalImagePath.equals(imagePath)) {
+            ImageStorage.deleteImage(originalImagePath);
+        }
+
+        saved = true;
         Toast.makeText(this, R.string.message_saved, Toast.LENGTH_SHORT).show();
         finish();   // go back to the previous screen, which reloads in onResume()
     }

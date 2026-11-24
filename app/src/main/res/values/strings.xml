@@ -19,6 +19,10 @@
     <string name="save_failed">Could not save the message</string>
     <string name="error_title_required">Please enter a title</string>
     <string name="error_body_required">Please enter a message</string>
+    <string name="gallery">Gallery</string>
+    <string name="remove_image">Remove image</string>
+    <string name="attached_image">Attached image</string>
+    <string name="image_failed">Could not attach the image</string>
 
     <!-- Detail screen -->
     <string name="message_not_found">Message not found</string>

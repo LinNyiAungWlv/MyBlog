@@ -1,9 +1,12 @@
 package wlv.ac.uk.myblog;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -20,6 +23,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import java.text.DateFormat;
 import java.util.Date;
 
+import wlv.ac.uk.myblog.data.ImageStorage;
 import wlv.ac.uk.myblog.data.MessageRepository;
 import wlv.ac.uk.myblog.model.Message;
 
@@ -36,6 +40,7 @@ public class MessageDetailActivity extends AppCompatActivity {
     private TextView textTitle;
     private TextView textDate;
     private TextView textBody;
+    private ImageView imageMessage;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,6 +66,7 @@ public class MessageDetailActivity extends AppCompatActivity {
         textTitle = findViewById(R.id.textTitle);
         textDate = findViewById(R.id.textDate);
         textBody = findViewById(R.id.textBody);
+        imageMessage = findViewById(R.id.imageMessage);
     }
 
     /** Load the message each time the screen is shown, so it is always up to date. */
@@ -81,6 +87,11 @@ public class MessageDetailActivity extends AppCompatActivity {
 
         textTitle.setText(message.getTitle());
         textBody.setText(message.getBody());
+
+        // Show the attached image, or hide the image area if there is none
+        Bitmap bitmap = ImageStorage.loadImage(message.getImagePath());
+        imageMessage.setImageBitmap(bitmap);
+        imageMessage.setVisibility(bitmap != null ? View.VISIBLE : View.GONE);
         String date = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
                 .format(new Date(message.getUpdatedAt()));
         textDate.setText(date);

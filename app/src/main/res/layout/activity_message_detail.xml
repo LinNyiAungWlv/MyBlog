@@ -24,6 +24,16 @@
             android:orientation="vertical"
             android:padding="16dp">
 
+            <!-- Attached image, hidden when the message has no image -->
+            <ImageView
+                android:id="@+id/imageMessage"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:adjustViewBounds="true"
+                android:contentDescription="@string/attached_image"
+                android:visibility="gone" />
+
             <TextView
                 android:id="@+id/textTitle"
                 android:layout_width="match_parent"
