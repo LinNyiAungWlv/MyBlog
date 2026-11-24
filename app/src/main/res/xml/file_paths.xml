@@ -8,4 +8,9 @@
     <cache-path
         name="camera"
         path="camera/" />
+
+    <!-- Saved message images, so they can be attached when sharing a message -->
+    <files-path
+        name="images"
+        path="images/" />
 </paths>

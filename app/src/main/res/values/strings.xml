@@ -30,6 +30,8 @@
     <string name="message_not_found">Message not found</string>
     <string name="edit_message">Edit message</string>
     <string name="edit">Edit</string>
+    <string name="share">Share</string>
+    <string name="share_via">Share message via</string>
     <string name="delete">Delete</string>
     <string name="cancel">Cancel</string>
     <string name="delete_message_title">Delete message?</string>

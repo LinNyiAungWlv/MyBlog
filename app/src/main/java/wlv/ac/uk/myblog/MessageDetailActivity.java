@@ -1,7 +1,9 @@
 package wlv.ac.uk.myblog;
 
+import android.content.ClipData;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -20,6 +22,7 @@ import androidx.core.view.WindowInsetsCompat;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
+import java.io.File;
 import java.text.DateFormat;
 import java.util.Date;
 
@@ -107,7 +110,10 @@ public class MessageDetailActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         int itemId = item.getItemId();
-        if (itemId == R.id.action_edit) {
+        if (itemId == R.id.action_share) {
+            shareMessage();
+            return true;
+        } else if (itemId == R.id.action_edit) {
             // Open the editor with this message loaded
             Intent intent = new Intent(this, EditMessageActivity.class);
             intent.putExtra(EditMessageActivity.EXTRA_MESSAGE_ID, messageId);
@@ -118,6 +124,34 @@ public class MessageDetailActivity extends AppCompatActivity {
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    /**
+     * Shares the message (title, text and image) using Android's standard Share sheet,
+     * so the user can send it by email or any other app they choose.
+     */
+    private void shareMessage() {
+        Message message = repository.getById(messageId);
+        if (message == null) {
+            return;
+        }
+
+        Intent send = new Intent(Intent.ACTION_SEND);
+        send.putExtra(Intent.EXTRA_SUBJECT, message.getTitle());   // email subject
+        send.putExtra(Intent.EXTRA_TEXT, message.getTitle() + "\n\n" + message.getBody());
+
+        if (message.hasImage() && new File(message.getImagePath()).exists()) {
+            // Attach the image through our FileProvider and let the receiving app read it
+            Uri imageUri = ImageStorage.getShareUri(this, message.getImagePath());
+            send.setType("image/jpeg");
+            send.putExtra(Intent.EXTRA_STREAM, imageUri);
+            send.setClipData(ClipData.newRawUri(null, imageUri));
+            send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        } else {
+            send.setType("text/plain");
+        }
+
+        startActivity(Intent.createChooser(send, getString(R.string.share_via)));
     }
 
     /** Asks the user to confirm before deleting, because it cannot be undone. */

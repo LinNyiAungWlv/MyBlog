@@ -84,6 +84,11 @@ public class ImageStorage {
         return FileProvider.getUriForFile(context, context.getPackageName() + ".fileprovider", file);
     }
 
+    /** Returns a content:// address for a saved image, so another app can read it (used for sharing). */
+    public static Uri getShareUri(Context context, String path) {
+        return FileProvider.getUriForFile(context, context.getPackageName() + ".fileprovider", new File(path));
+    }
+
     /** Loads a saved image for display, or returns null if the file is missing. */
     public static Bitmap loadImage(String path) {
         if (path == null) {
